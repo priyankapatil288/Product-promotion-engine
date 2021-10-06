@@ -15,26 +15,23 @@ import com.campaign.model.Promotion;
 @Service
 public class PromotionService {
 
-	HashMap<String, Promotion> promotionMap = new HashMap<>();
+	
 
-	HashMap<String, String> clubbedPromotionMap = new HashMap<>();
-	HashMap<String, Integer> cart = new HashMap<>();
+	
+	
 
 	String Activepromotions = "3:A:130;2:B:45;1:C&D:30";// Qty:ProductName:cost
 
 	HashMap<String, Integer> checkoutCart = new HashMap<>();;
 
-	public void checkout() {
+	public int checkout(HashMap<String, Integer> cart) {
 		System.out.println("Starting..");
-		cart.put("A", 3);
-		cart.put("B", 5);
-		cart.put("C", 1);		
-		cart.put("D", 1);
-
+		HashMap<String, String> clubbedPromotionMap = new HashMap<>();
+		HashMap<String, Promotion> promotionMap = new HashMap<>();
 		System.out.println("Checking Promotions..");
 		String[] allPromotions = Activepromotions.split(";");
 		for (String promotion : allPromotions) {
-			addToPromotionMap(promotion);
+			addToPromotionMap(promotion, promotionMap);
 		}
 		System.out.println("Applying Promotions to cart..");
 		for (Map.Entry<String, Integer> productMap : cart.entrySet()) {
@@ -43,23 +40,25 @@ public class PromotionService {
 			if (promotionMap.get(product) != null) {
 				applyPromotionUpdateCart(cart, promotionMap.get(product));
 			} else {
-				checkClubbedPromotionForProduct(product);
+				checkClubbedPromotionForProduct(product,promotionMap,clubbedPromotionMap);
 				addProductForCheckout(product, qty, getCost(product), false);
 
 			}
 			
 		}
 		System.out.println("Applying Clubbed Promotions to cart..");
-		applyClubbedPromotions();
+		applyClubbedPromotions(cart,promotionMap,clubbedPromotionMap);
 		System.out.println(checkoutCart);
 		int total = 0;
 		for (Integer val : checkoutCart.values()) {
 			total = total + val;
 		}
-		System.out.println("Cart Cost : " + total);
+		
+		return total;
+		
 	}
 
-	private void applyClubbedPromotions() {
+	private void applyClubbedPromotions(HashMap<String, Integer> cart,HashMap<String, Promotion> promotionMap,HashMap<String, String> clubbedPromotionMap) {
 		if (clubbedPromotionMap.isEmpty()) {
 			System.out.println("No Clubbed Promotions..");
 			return;
@@ -136,13 +135,13 @@ public class PromotionService {
 
 	}
 
-	private void addToPromotionMap(String promotion) {
+	private void addToPromotionMap(String promotion,HashMap<String, Promotion> promotionMap) {
 		String[] promotionString = promotion.split(":");
 		promotionMap.put(promotionString[1], new Promotion(Integer.parseInt(promotionString[0]), promotionString[1],
 				Integer.parseInt(promotionString[2])));
 	}
 
-	private boolean checkClubbedPromotionForProduct(String productName) {
+	private boolean checkClubbedPromotionForProduct(String productName,HashMap<String, Promotion> promotionMap,HashMap<String, String> clubbedPromotionMap) {
 		Set<Promotion> promotions = promotionMap.entrySet().stream()
 				.filter(entry -> entry.getKey().contains(productName)).map(Map.Entry::getValue)
 				.collect(Collectors.toSet());
